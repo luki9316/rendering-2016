@@ -4,8 +4,9 @@
 #include <QDebug>
 #include <QFile>
 
-#define MODEL          "rcube" // dragon sphere rcube kubek
+#define MODEL          "texcube" // dragon sphere rcube kubek
 #define TEXTURE_SKYBOX "thickcloudswater" // jajdesert1 nansen test cloudylightrays thickcloudswater
+#define TEXTURE_MIRROR "wood3_specular"
 
 GLuint WidgetOpenGL::loadShader(GLenum type, QString fname)
 {
@@ -201,6 +202,18 @@ void WidgetOpenGL::initializeGL()
 
         tex_skybox = loadTextureCube("../Modele/" TEXTURE_SKYBOX,  ".jpg");
 
+        QImage tex("../Modele/" TEXTURE_MIRROR);
+        if (tex.byteCount() == 0) throw QString("Nie udalo sie wczytac tekstury lustrzanej");
+        glGenTextures(1, &tex_mirror);
+        glBindTexture(GL_TEXTURE_2D, tex_mirror);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex.width(), tex.height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, tex.bits());
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
 
         ////////////////////////////////////////////////////////////////
         // CZ 3. Vertex Buffer Object + Vertex Array Object
@@ -226,6 +239,11 @@ void WidgetOpenGL::initializeGL()
         attr = glGetAttribLocation(shaderProgram, "normal");
         if (attr < 0) throw QString("Nieprawidlowy parametr 'normal'");
         glVertexAttribPointer(attr, 3, GL_FLOAT, GL_FALSE, model.getVertDataStride()*sizeof(GLfloat), (void *)(3*sizeof(GLfloat)));
+        glEnableVertexAttribArray(attr);
+
+        // wspolrzedne tekstury
+        attr = getAttribLocation(shaderProgram, "textureCoor");
+        glVertexAttribPointer(attr, 2, GL_FLOAT, GL_FALSE, model.getVertDataStride()*sizeof(GLfloat), (void *)(6*sizeof(GLfloat)));
         glEnableVertexAttribArray(attr);
 
         // zapodajemy VBO
@@ -349,6 +367,10 @@ void WidgetOpenGL::paintGL()
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, tex_skybox);
         glUniform1i(getUniformLocation(shaderProgram, "textureSkybox"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, tex_mirror);
+        glUniform1i(getUniformLocation(shaderProgram, "textureMirror"), 1);
 
         // macierze
         int attr_pm = getUniformLocation(shaderProgram, "p_matrix");

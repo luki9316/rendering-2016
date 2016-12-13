@@ -1,4 +1,4 @@
-#version 450
+#version 440
 
 struct Light
 {
@@ -16,12 +16,14 @@ struct Material
 
 in vec4 fragPos;
 in vec3 fragNormal;
+in vec2 fragTexCoor;
 
 uniform vec3 eyePos;
 uniform Light light;
 uniform Material material;
 
 uniform samplerCube textureSkybox;
+uniform sampler2D textureMirror;
 uniform int slider;
 
 out vec4 color;
@@ -41,8 +43,9 @@ void main()
   vec3 specular = pow(max(dot(viewDir, reflDir), 0.0), material.shininess)*light.color*material.specular;
 
   vec3 mirror = texture(textureSkybox, R).rgb;
+  vec3 refl = texture(textureMirror, fragTexCoor).rgb;
   if (int(gl_FragCoord.x) < slider)
-    mirror = vec3(0.0, 0.0, 0.0);
+    mirror = mix(vec3(0.0, 0.0, 0.0), mirror, refl);
 
   color = vec4(material.ambient + diffuse + specular + mirror, 1.0);
 }
