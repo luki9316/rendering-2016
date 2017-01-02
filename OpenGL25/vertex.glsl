@@ -2,7 +2,7 @@
 
 in vec3 position;
 in vec3 normal;
-in vec2 textureCoor;
+in vec2 reflexTexture; // !!!
 
 uniform mat4 p_matrix;
 uniform mat4 v_matrix;
@@ -11,7 +11,7 @@ uniform mat3 norm_matrix;
 
 out vec3 fragNormal;
 out vec4 fragPos;
-out vec2 fragTexCoor;
+out vec2 reflFragTexCoor; // !!!
 
 void main()
 {
@@ -22,5 +22,5 @@ void main()
 
     fragNormal = normalize(norm_matrix*normal);
 
-    fragTexCoor = textureCoor;
+    reflFragTexCoor = reflexTexture;
 }

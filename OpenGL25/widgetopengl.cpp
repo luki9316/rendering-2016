@@ -6,7 +6,6 @@
 
 #define MODEL          "texcube" // dragon sphere rcube kubek
 #define TEXTURE_SKYBOX "thickcloudswater" // jajdesert1 nansen test cloudylightrays thickcloudswater
-#define TEXTURE_MIRROR "wood3_specular"
 
 GLuint WidgetOpenGL::loadShader(GLenum type, QString fname)
 {
@@ -193,7 +192,7 @@ void WidgetOpenGL::initializeGL()
         ////////////////////////////////////////////////////////////////
 
         Model model;
-        model.readFile("../Modele/" MODEL ".obj", true, false, false, 0.5);
+        model.readFile("../Modele/" MODEL ".obj", true, true, false, 0.5);
         triangles_cnt = model.getVertDataCount();
 
         ////////////////////////////////////////////////////////////////
@@ -201,18 +200,7 @@ void WidgetOpenGL::initializeGL()
         ////////////////////////////////////////////////////////////////
 
         tex_skybox = loadTextureCube("../Modele/" TEXTURE_SKYBOX,  ".jpg");
-
-        QImage tex("../Modele/" TEXTURE_MIRROR);
-        if (tex.byteCount() == 0) throw QString("Nie udalo sie wczytac tekstury lustrzanej");
-        glGenTextures(1, &tex_mirror);
-        glBindTexture(GL_TEXTURE_2D, tex_mirror);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex.width(), tex.height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, tex.bits());
-        glGenerateMipmap(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        reflection_tex=loadTexture2D("../Modele/wood3_specular.jpg");
 
 
         ////////////////////////////////////////////////////////////////
@@ -241,8 +229,11 @@ void WidgetOpenGL::initializeGL()
         glVertexAttribPointer(attr, 3, GL_FLOAT, GL_FALSE, model.getVertDataStride()*sizeof(GLfloat), (void *)(3*sizeof(GLfloat)));
         glEnableVertexAttribArray(attr);
 
-        // wspolrzedne tekstury
-        attr = getAttribLocation(shaderProgram, "textureCoor");
+        //////////////////////////
+        // wspolrzedne tekstury //
+        //////////////////////////
+        attr = glGetAttribLocation(shaderProgram, "reflexTexture");
+        if (attr < 0) throw QString("Nieprawidlowy parametr 'reflexTexture'");
         glVertexAttribPointer(attr, 2, GL_FLOAT, GL_FALSE, model.getVertDataStride()*sizeof(GLfloat), (void *)(6*sizeof(GLfloat)));
         glEnableVertexAttribArray(attr);
 
@@ -368,9 +359,11 @@ void WidgetOpenGL::paintGL()
         glBindTexture(GL_TEXTURE_CUBE_MAP, tex_skybox);
         glUniform1i(getUniformLocation(shaderProgram, "textureSkybox"), 0);
 
+        // udostepnienie tekstury
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, tex_mirror);
-        glUniform1i(getUniformLocation(shaderProgram, "textureMirror"), 1);
+        glBindTexture(GL_TEXTURE_2D, reflection_tex);
+        int attr_tex = getUniformLocation(shaderProgram, "reflMap");
+        glUniform1i(attr_tex, 1);
 
         // macierze
         int attr_pm = getUniformLocation(shaderProgram, "p_matrix");
@@ -389,10 +382,6 @@ void WidgetOpenGL::paintGL()
         QVector4D eye = v_matrix.inverted()*QVector4D(0, 0, 5, 1);
         GLfloat eyefl[] = {eye.x(), eye.y(), eye.z()};
         glUniform3fv(attr_eye, 1, eyefl);
-
-        // slider
-        int attr_s = getUniformLocation(shaderProgram, "slider");
-        glUniform1i(attr_s, slider);
 
         // swiatlo
         int attr_light = getUniformLocation(shaderProgram, "light.pos");

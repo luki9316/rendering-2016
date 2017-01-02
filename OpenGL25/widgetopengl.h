@@ -44,7 +44,8 @@ protected:
 
     GLuint shaderProgram, shaderProgramSkybox;
     GLuint VAO, VAO_light, VAO_skybox;
-    GLuint tex_skybox, tex_mirror;
+    GLuint tex_skybox;
+    GLuint reflection_tex;
 
     GLuint loadShader(GLenum type, QString fname);
     GLuint linkProgram(GLuint vertex_shader, GLuint fragment_shader, GLuint geometry_shader = 0, GLuint tess_eval_shader = 0, GLuint tess_control_shader = 0);
